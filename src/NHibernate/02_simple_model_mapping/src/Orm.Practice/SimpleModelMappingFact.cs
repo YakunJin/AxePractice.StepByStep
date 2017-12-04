@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
+using FluentNHibernate.Automapping;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
 using NHibernate;
@@ -33,7 +35,8 @@ namespace Orm.Practice
          *   Server instance, this value should set as `true`.
          */
 
-        protected string ConnectionString { get; } = "Data Source=(local);Initial Catalog=AdventureWorks2014;Integrated Security=True;";
+        protected string ConnectionString { get; } =
+            "Data Source=(local);Initial Catalog=AdventureWorks2014;Integrated Security=True;";
 
         #endregion
 
@@ -42,6 +45,7 @@ namespace Orm.Practice
             sessionFactory = CreateSessionFactory(ConnectionString);
 
             #region Please initialize the session object
+
             session = sessionFactory.OpenSession();
             session.FlushMode = FlushMode.Commit;
 
@@ -60,11 +64,19 @@ namespace Orm.Practice
              */
             try
             {
+                Assembly executingAssembly = Assembly.GetExecutingAssembly();
+
+                var autoMapptingConfiguration = new AutoMappingConfiguration();
                 var soFactory = Fluently.Configure()
-                .Database(MsSqlConfiguration.MsSql2008.ConnectionString(connectionString).ShowSql())
-                .Mappings(m => m.FluentMappings.AddFromAssembly(Assembly.GetExecutingAssembly()))
-                .CurrentSessionContext<ThreadStaticSessionContext>()
-                .BuildSessionFactory();
+                    .Database(MsSqlConfiguration.MsSql2008.ConnectionString(connectionString).ShowSql())
+                    .Mappings(
+                        m =>
+                        {
+                            m.AutoMappings.Add(
+                                AutoMap.AssemblyOf<Address>(autoMapptingConfiguration)
+                                    .UseOverridesFromAssembly(executingAssembly));
+                        })
+                    .BuildSessionFactory();
                 return soFactory;
             }
             catch (Exception e)
@@ -72,7 +84,6 @@ namespace Orm.Practice
                 Console.WriteLine(e);
                 throw;
             }
-            
 
             #endregion
         }
@@ -94,6 +105,19 @@ namespace Orm.Practice
         {
             session?.Dispose();
             sessionFactory?.Dispose();
+        }
+    }
+
+    public class AutoMappingConfiguration : DefaultAutomappingConfiguration
+    {
+        static readonly HashSet<Type> types = new HashSet<Type>
+        {
+            typeof(Address)
+        };
+
+        public override bool ShouldMap(Type type)
+        {
+            return type != null && types.Contains(type);
         }
     }
 }

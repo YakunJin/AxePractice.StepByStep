@@ -1,4 +1,8 @@
-﻿using FluentNHibernate.Conventions.Helpers;
+﻿using System.Collections.Generic;
+using FluentNHibernate;
+using FluentNHibernate.Automapping;
+using FluentNHibernate.Automapping.Alterations;
+using FluentNHibernate.Conventions.Helpers;
 using FluentNHibernate.Mapping;
 
 namespace Orm.Practice
@@ -31,16 +35,12 @@ namespace Orm.Practice
      * `AddressID`.
      */
 
-    public class AddressMap : ClassMap<Address>
+    public class AddressMap : IAutoMappingOverride<Address>
     {
-        public AddressMap()
+        public void Override(AutoMapping<Address> mapping)
         {
-            this.Table("Person.Address");
-            this.Id(a => a.Id).Column("AddressID");
-            this.Map(a => a.AddressLine1).Column("AddressLine1");
-            this.Map(a => a.AddressLine2).Column("AddressLine2");
-            this.Map(a => a.City).Column("City");
-            this.Map(a => a.PostalCode).Column("PostalCode");
+            mapping.Table("[Person].[Address]");
+            mapping.Id(m => m.Id).Column("AddressID");
         }
     }
     #endregion
